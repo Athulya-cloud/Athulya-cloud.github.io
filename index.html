@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>athulya ~ sre engineer</title>
+  <title>athulya ~ devrel</title>
   <style>
     :root {
       --green: #00ff41;
@@ -278,7 +278,7 @@
   <div class="section">
     <div class="section-header">## whoami</div>
     <div class="kv"><span class="key">name</span><span class="val">Athulya</span></div>
-    <div class="kv"><span class="key">role</span><span class="val">Site Reliability Engineer</span></div>
+    <div class="kv"><span class="key">role</span><span class="val">Developer Relations</span></div>
     <div class="kv"><span class="key">focus</span><span class="val">Infrastructure · Observability · Automation</span></div>
     <div class="kv"><span class="key">interests</span><span class="val">Kubernetes · Linux · CI/CD · Cloud-native</span></div>
     <div class="kv"><span class="key">status</span><span class="val" style="color:var(--green)">open to opportunities <span class="cursor"></span></span></div>
@@ -372,14 +372,7 @@
 
 <script>
   const GITHUB_USER = 'Athulya-cloud';
-  const PINNED_REPOS = [
-    'date-displayer-go_docker_k8',
-    'micro-monitoring-mvp',
-    'fix-the-ship',
-    'wisecow',
-    'health-chatbot-rag-mcp',
-    'agent-dashboard',
-  ];
+  const PINNED_REPOS = null; // null = show all repos
 
   const LANG_COLORS = {
     Go: '#00add8',
@@ -442,16 +435,13 @@
   }
 
   function renderProjects(repos) {
-    const repoMap = {};
-    repos.forEach(r => repoMap[r.name] = r);
+    const list = repos.filter(r => !r.fork).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
-    const cards = PINNED_REPOS.map(name => {
-      const repo = repoMap[name];
-      if (!repo) return '';
-
+    const cards = list.map(repo => {
       const lang = repo.language || '—';
       const color = LANG_COLORS[lang] || LANG_COLORS.default;
-      const desc = REPO_DESCRIPTIONS[name] || repo.description || 'No description.';
+      const desc = REPO_DESCRIPTIONS[repo.name] || repo.description || 'No description.';
+      const updated = new Date(repo.updated_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
 
       return `
         <div class="project-card">
@@ -465,6 +455,7 @@
             </span>
             <span class="stars">★ ${repo.stargazers_count}</span>
             <span>${repo.forks_count} forks</span>
+            <span style="margin-left:auto;font-size:11px">${updated}</span>
           </div>
         </div>
       `;
