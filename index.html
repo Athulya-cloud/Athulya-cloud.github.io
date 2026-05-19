@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>athulya ~ sre engineer</title>
+  <style>
+    :root {
+      --green: #00ff41;
+      --dim-green: #00b32c;
+      --amber: #ffb000;
+      --red: #ff4444;
+      --bg: #0d0d0d;
+      --bg2: #111;
+      --border: #1a1a1a;
+      --muted: #444;
+      --white: #ccc;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--green);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* scanline effect */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* Terminal window chrome */
+    .term-window {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+
+    .term-bar {
+      background: #1a1a1a;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .term-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+
+    .term-title {
+      margin-left: auto;
+      margin-right: auto;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .term-body {
+      padding: 1.5rem;
+      background: var(--bg);
+    }
+
+    /* Prompt line */
+    .prompt { color: var(--dim-green); }
+    .prompt .user { color: var(--green); }
+    .prompt .host { color: var(--amber); }
+    .prompt .path { color: var(--dim-green); }
+    .prompt .sym { color: var(--white); }
+
+    .cmd { color: var(--white); }
+
+    /* ASCII banner */
+    .banner {
+      color: var(--green);
+      font-size: 11px;
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+      white-space: pre;
+    }
+
+    /* Sections */
+    .section { margin-bottom: 2rem; }
+
+    .section-header {
+      color: var(--amber);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Key-value output */
+    .kv { display: flex; gap: 1rem; margin-bottom: 0.25rem; flex-wrap: wrap; }
+    .kv .key { color: var(--dim-green); min-width: 120px; }
+    .kv .val { color: var(--white); }
+
+    /* Skills grid */
+    .skill-group { margin-bottom: 0.5rem; }
+    .skill-label { color: var(--dim-green); }
+    .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.25rem; }
+    .tag {
+      border: 1px solid var(--dim-green);
+      color: var(--green);
+      padding: 1px 8px;
+      font-size: 12px;
+      border-radius: 2px;
+    }
+
+    /* Project cards */
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1rem;
+    }
+
+    .project-card {
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 4px;
+      background: var(--bg2);
+      transition: border-color 0.2s;
+    }
+
+    .project-card:hover { border-color: var(--dim-green); }
+
+    .project-name {
+      color: var(--green);
+      font-weight: bold;
+      margin-bottom: 0.4rem;
+    }
+
+    .project-name a { color: inherit; text-decoration: none; }
+    .project-name a:hover { text-decoration: underline; }
+
+    .project-desc { color: var(--white); font-size: 13px; margin-bottom: 0.75rem; min-height: 2.6em; }
+
+    .project-meta {
+      display: flex;
+      gap: 1rem;
+      font-size: 12px;
+      color: var(--muted);
+      align-items: center;
+    }
+
+    .lang-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 4px;
+    }
+
+    .project-meta .stars { color: var(--amber); }
+
+    /* Stats row */
+    .stats-row {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-box {
+      text-align: center;
+      border: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      background: var(--bg2);
+    }
+
+    .stat-num { font-size: 1.8rem; color: var(--green); display: block; }
+    .stat-lbl { font-size: 12px; color: var(--muted); }
+
+    /* Contact */
+    .contact-line { margin-bottom: 0.3rem; }
+    .contact-line a { color: var(--green); text-decoration: none; }
+    .contact-line a:hover { text-decoration: underline; }
+    .contact-line .ico { color: var(--amber); margin-right: 0.5rem; }
+
+    /* Cursor blink */
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 1em;
+      background: var(--green);
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* Live indicator */
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-left: 0.5rem;
+    }
+    .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+
+    .loading { color: var(--muted); font-style: italic; }
+
+    @media (max-width: 600px) {
+      .banner { font-size: 8px; }
+      .project-grid { grid-template-columns: 1fr; }
+      .stats-row { gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header terminal window -->
+  <div class="term-window">
+    <div class="term-bar">
+      <span class="term-dot dot-r"></span>
+      <span class="term-dot dot-y"></span>
+      <span class="term-dot dot-g"></span>
+      <span class="term-title">athulya@sre:~</span>
+    </div>
+    <div class="term-body">
+      <pre class="banner">
+  █████╗ ████████╗██╗  ██╗██╗   ██╗██╗  ██╗   ██╗ █████╗
+ ██╔══██╗╚══██╔══╝██║  ██║██║   ██║██║  ╚██╗ ██╔╝██╔══██╗
+ ███████║   ██║   ███████║██║   ██║██║   ╚████╔╝ ███████║
+ ██╔══██║   ██║   ██╔══██║██║   ██║██║    ╚██╔╝  ██╔══██║
+ ██║  ██║   ██║   ██║  ██║╚██████╔╝███████╗██║   ██║  ██║
+ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝  ╚═╝</pre>
+
+      <div class="prompt">
+        <span class="user">athulya</span><span class="sym">@</span><span class="host">sre</span><span class="sym">:</span><span class="path">~</span><span class="sym">$ </span><span class="cmd">whoami --verbose</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- About -->
+  <div class="section">
+    <div class="section-header">## whoami</div>
+    <div class="kv"><span class="key">name</span><span class="val">Athulya</span></div>
+    <div class="kv"><span class="key">role</span><span class="val">Site Reliability Engineer</span></div>
+    <div class="kv"><span class="key">focus</span><span class="val">Infrastructure · Observability · Automation</span></div>
+    <div class="kv"><span class="key">interests</span><span class="val">Kubernetes · Linux · CI/CD · Cloud-native</span></div>
+    <div class="kv"><span class="key">status</span><span class="val" style="color:var(--green)">open to opportunities <span class="cursor"></span></span></div>
+  </div>
+
+  <!-- Skills -->
+  <div class="section">
+    <div class="section-header">## skills</div>
+
+    <div class="skill-group">
+      <div class="skill-label">infra &amp; cloud</div>
+      <div class="tags">
+        <span class="tag">Kubernetes</span>
+        <span class="tag">Docker</span>
+        <span class="tag">Linux</span>
+        <span class="tag">AWS</span>
+        <span class="tag">Terraform</span>
+      </div>
+    </div>
+
+    <div class="skill-group" style="margin-top:0.75rem">
+      <div class="skill-label">observability</div>
+      <div class="tags">
+        <span class="tag">Prometheus</span>
+        <span class="tag">Grafana</span>
+        <span class="tag">Loki</span>
+        <span class="tag">OpenTelemetry</span>
+      </div>
+    </div>
+
+    <div class="skill-group" style="margin-top:0.75rem">
+      <div class="skill-label">languages</div>
+      <div class="tags">
+        <span class="tag">Go</span>
+        <span class="tag">Python</span>
+        <span class="tag">Shell/Bash</span>
+        <span class="tag">TypeScript</span>
+      </div>
+    </div>
+
+    <div class="skill-group" style="margin-top:0.75rem">
+      <div class="skill-label">ci/cd</div>
+      <div class="tags">
+        <span class="tag">GitHub Actions</span>
+        <span class="tag">ArgoCD</span>
+        <span class="tag">Helm</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live GitHub Stats -->
+  <div class="section">
+    <div class="section-header">
+      ## github stats
+      <span class="live-badge"><span class="live-dot"></span>live</span>
+    </div>
+    <div class="stats-row" id="stats-row">
+      <div class="loading">fetching live data from api.github.com...</div>
+    </div>
+  </div>
+
+  <!-- Projects -->
+  <div class="section">
+    <div class="section-header">
+      ## projects
+      <span class="live-badge"><span class="live-dot"></span>live</span>
+    </div>
+    <div class="project-grid" id="project-grid">
+      <div class="loading">loading repositories...</div>
+    </div>
+  </div>
+
+  <!-- Contact -->
+  <div class="section">
+    <div class="section-header">## contact</div>
+    <div class="contact-line">
+      <span class="ico">></span>
+      <a href="https://github.com/Athulya-cloud" target="_blank">github.com/Athulya-cloud</a>
+    </div>
+    <div class="contact-line">
+      <span class="ico">></span>
+      <a href="mailto:athulya2052@gmail.com">athulya2052@gmail.com</a>
+    </div>
+  </div>
+
+  <div style="color:var(--muted);font-size:12px;margin-top:2rem;border-top:1px solid var(--border);padding-top:1rem;">
+    <span style="color:var(--dim-green)">$</span> last updated: <span id="last-updated"></span> &nbsp;|&nbsp; powered by GitHub API
+  </div>
+
+</div>
+
+<script>
+  const GITHUB_USER = 'Athulya-cloud';
+  const PINNED_REPOS = [
+    'date-displayer-go_docker_k8',
+    'micro-monitoring-mvp',
+    'fix-the-ship',
+    'wisecow',
+    'health-chatbot-rag-mcp',
+    'agent-dashboard',
+  ];
+
+  const LANG_COLORS = {
+    Go: '#00add8',
+    Python: '#3572a5',
+    Shell: '#89e051',
+    TypeScript: '#3178c6',
+    JavaScript: '#f1e05a',
+    Java: '#b07219',
+    Swift: '#f05138',
+    HTML: '#e34c26',
+    default: '#444',
+  };
+
+  const REPO_DESCRIPTIONS = {
+    'date-displayer-go_docker_k8': 'Go service containerized with Docker and deployed on Kubernetes — k8s manifests included.',
+    'micro-monitoring-mvp': 'Lightweight microservice monitoring MVP with metrics collection.',
+    'fix-the-ship': 'Hands-on DevOps learning game for tech graduates — real incident simulation.',
+    'wisecow': 'Shell automation utility.',
+    'health-chatbot-rag-mcp': 'Doctor-facing health chatbot using RAG pipeline, vector embeddings, and LLM orchestration.',
+    'agent-dashboard': 'Dashboard UI for agent management built with TypeScript.',
+  };
+
+  async function fetchGitHub() {
+    const [userRes, reposRes] = await Promise.all([
+      fetch(`https://api.github.com/users/${GITHUB_USER}`),
+      fetch(`https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=updated`),
+    ]);
+
+    const user = await userRes.json();
+    const repos = await reposRes.json();
+
+    renderStats(user, repos);
+    renderProjects(repos);
+
+    document.getElementById('last-updated').textContent = new Date().toUTCString();
+  }
+
+  function renderStats(user, repos) {
+    const totalStars = repos.reduce((a, r) => a + r.stargazers_count, 0);
+    const langs = [...new Set(repos.map(r => r.language).filter(Boolean))].length;
+
+    document.getElementById('stats-row').innerHTML = `
+      <div class="stat-box">
+        <span class="stat-num">${user.public_repos}</span>
+        <span class="stat-lbl">repositories</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num">${totalStars}</span>
+        <span class="stat-lbl">total stars</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num">${user.followers}</span>
+        <span class="stat-lbl">followers</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num">${langs}</span>
+        <span class="stat-lbl">languages</span>
+      </div>
+    `;
+  }
+
+  function renderProjects(repos) {
+    const repoMap = {};
+    repos.forEach(r => repoMap[r.name] = r);
+
+    const cards = PINNED_REPOS.map(name => {
+      const repo = repoMap[name];
+      if (!repo) return '';
+
+      const lang = repo.language || '—';
+      const color = LANG_COLORS[lang] || LANG_COLORS.default;
+      const desc = REPO_DESCRIPTIONS[name] || repo.description || 'No description.';
+
+      return `
+        <div class="project-card">
+          <div class="project-name">
+            <a href="${repo.html_url}" target="_blank">> ${repo.name}</a>
+          </div>
+          <div class="project-desc">${desc}</div>
+          <div class="project-meta">
+            <span>
+              <span class="lang-dot" style="background:${color}"></span>${lang}
+            </span>
+            <span class="stars">★ ${repo.stargazers_count}</span>
+            <span>${repo.forks_count} forks</span>
+          </div>
+        </div>
+      `;
+    });
+
+    document.getElementById('project-grid').innerHTML = cards.join('');
+  }
+
+  fetchGitHub().catch(err => {
+    document.getElementById('stats-row').innerHTML = `<span style="color:var(--red)">error: ${err.message}</span>`;
+    document.getElementById('project-grid').innerHTML = `<span style="color:var(--red)">failed to load repos</span>`;
+  });
+</script>
+</body>
+</html>
